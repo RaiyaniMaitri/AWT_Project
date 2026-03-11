@@ -1,0 +1,223 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model campus {
+  CampusID    Int           @id @default(autoincrement())
+  CampusName  String        @db.VarChar(250)
+  Address     String?       @db.VarChar(500)
+  Created     DateTime      @default(now()) @db.DateTime(0)
+  Modified    DateTime      @default(now()) @db.DateTime(0)
+  sec_user    sec_user[]
+  servicedept servicedept[]
+  staff       staff[]
+}
+
+model sec_user {
+  UserID                       Int                            @id @default(autoincrement())
+  UserName                     String                         @db.VarChar(250)
+  EmailAddress                 String                         @db.VarChar(500)
+  Password                     String                         @db.VarChar(50)
+  MobileNo                     String                         @db.VarChar(50)
+  ProfileImage                 String?                        @db.VarChar(500)
+  CampusID                     Int
+  Created                      DateTime                       @default(now()) @db.DateTime(0)
+  Modified                     DateTime                       @default(now()) @db.DateTime(0)
+  campus                       campus                         @relation(fields: [CampusID], references: [CampusID], onUpdate: Restrict, map: "FK_User_Campus")
+  servicedept                  servicedept[]
+  servicedeptperson            servicedeptperson[]
+  servicerequest               servicerequest[]
+  servicerequestreply          servicerequestreply[]
+  servicerequeststatus         servicerequeststatus[]
+  servicerequesttype           servicerequesttype[]
+  servicerequesttypewiseperson servicerequesttypewiseperson[]
+  servicetype                  servicetype[]
+
+  @@index([CampusID], map: "FK_User_Campus")
+}
+
+model servicedept {
+  ServiceDeptID      Int                  @id @default(autoincrement())
+  ServiceDeptName    String               @db.VarChar(250)
+  CampusID           Int
+  Description        String?              @db.VarChar(250)
+  UserID             Int
+  Created            DateTime             @db.DateTime(0)
+  Modified           DateTime             @db.DateTime(0)
+  campus             campus               @relation(fields: [CampusID], references: [CampusID], onUpdate: Restrict, map: "servicedept_ibfk_1")
+  sec_user           sec_user             @relation(fields: [UserID], references: [UserID], onUpdate: Restrict, map: "servicedept_ibfk_2")
+  servicedeptperson  servicedeptperson[]
+  servicerequesttype servicerequesttype[]
+
+  @@index([CampusID], map: "CampusID")
+  @@index([UserID], map: "UserID")
+}
+
+model servicedeptperson {
+  ServiceDeptPersonID Int         @id @default(autoincrement())
+  ServiceDeptID       Int
+  StaffID             Int
+  FromDate            DateTime    @db.DateTime(0)
+  ToDate              DateTime?   @db.DateTime(0)
+  Description         String?     @db.VarChar(250)
+  UserID              Int
+  Created             DateTime    @db.DateTime(0)
+  Modified            DateTime    @db.DateTime(0)
+  IsHODStaff          Boolean?
+  servicedept         servicedept @relation(fields: [ServiceDeptID], references: [ServiceDeptID], onUpdate: Restrict, map: "servicedeptperson_ibfk_1")
+  staff               staff       @relation(fields: [StaffID], references: [StaffID], onUpdate: Restrict, map: "servicedeptperson_ibfk_2")
+  sec_user            sec_user    @relation(fields: [UserID], references: [UserID], onUpdate: Restrict, map: "servicedeptperson_ibfk_3")
+
+  @@index([ServiceDeptID], map: "ServiceDeptID")
+  @@index([StaffID], map: "StaffID")
+  @@index([UserID], map: "UserID")
+}
+
+model servicerequest {
+  ServiceRequestID          Int                   @id @default(autoincrement())
+  ServiceRequestNo          String                @db.VarChar(500)
+  ServiceRequestDateTime    DateTime              @db.DateTime(0)
+  StaffID                   Int?
+  ServiceRequestTypeID      Int
+  ServiceRequestTitle       String                @db.VarChar(250)
+  ServiceRequestDescription String                @db.VarChar(2000)
+  ServiceRequestStatusID    Int
+  UserID                    Int
+  Created                   DateTime              @db.DateTime(0)
+  Modified                  DateTime              @db.DateTime(0)
+  staff                     staff?                @relation(fields: [StaffID], references: [StaffID], onDelete: Restrict, onUpdate: Restrict, map: "servicerequest_ibfk_1")
+  servicerequesttype        servicerequesttype    @relation(fields: [ServiceRequestTypeID], references: [ServiceRequestTypeID], onUpdate: Restrict, map: "servicerequest_ibfk_2")
+  servicerequeststatus      servicerequeststatus  @relation(fields: [ServiceRequestStatusID], references: [ServiceRequestStatusID], onUpdate: Restrict, map: "servicerequest_ibfk_3")
+  sec_user                  sec_user              @relation(fields: [UserID], references: [UserID], onUpdate: Restrict, map: "servicerequest_ibfk_4")
+  servicerequestreply       servicerequestreply[]
+
+  @@index([ServiceRequestStatusID], map: "ServiceRequestStatusID")
+  @@index([ServiceRequestTypeID], map: "ServiceRequestTypeID")
+  @@index([StaffID], map: "StaffID")
+  @@index([UserID], map: "UserID")
+}
+
+model servicerequestreply {
+  ServiceRequestReplyID          Int                  @id @default(autoincrement())
+  ServiceRequestID               Int
+  StaffID                        Int?
+  ServiceRequestReplyDateTime    DateTime             @db.DateTime(0)
+  ServiceRequestReplyDescription String               @db.VarChar(250)
+  ServiceRequestStatusID         Int
+  UserID                         Int
+  Created                        DateTime             @db.DateTime(0)
+  Modified                       DateTime             @db.DateTime(0)
+  servicerequest                 servicerequest       @relation(fields: [ServiceRequestID], references: [ServiceRequestID], onUpdate: Restrict, map: "servicerequestreply_ibfk_1")
+  staff                          staff?               @relation(fields: [StaffID], references: [StaffID], onDelete: Restrict, onUpdate: Restrict, map: "servicerequestreply_ibfk_2")
+  servicerequeststatus           servicerequeststatus @relation(fields: [ServiceRequestStatusID], references: [ServiceRequestStatusID], onUpdate: Restrict, map: "servicerequestreply_ibfk_3")
+  sec_user                       sec_user             @relation(fields: [UserID], references: [UserID], onUpdate: Restrict, map: "servicerequestreply_ibfk_4")
+
+  @@index([ServiceRequestID], map: "ServiceRequestID")
+  @@index([ServiceRequestStatusID], map: "ServiceRequestStatusID")
+  @@index([StaffID], map: "StaffID")
+  @@index([UserID], map: "UserID")
+}
+
+model servicerequeststatus {
+  ServiceRequestStatusID         Int                   @id @default(autoincrement())
+  ServiceRequestStatusName       String                @db.VarChar(250)
+  ServiceRequestStatusSystemName String                @db.VarChar(100)
+  Sequence                       Decimal?              @db.Decimal(10, 2)
+  Description                    String?               @db.VarChar(250)
+  UserID                         Int
+  Created                        DateTime              @db.DateTime(0)
+  Modified                       DateTime              @db.DateTime(0)
+  IsOpen                         Boolean?
+  IsNoFurtherActionRequired      Boolean?
+  IsAllowedForTechnician         Boolean?
+  servicerequest                 servicerequest[]
+  servicerequestreply            servicerequestreply[]
+  sec_user                       sec_user              @relation(fields: [UserID], references: [UserID], onUpdate: Restrict, map: "servicerequeststatus_ibfk_1")
+
+  @@index([UserID], map: "UserID")
+}
+
+model servicerequesttype {
+  ServiceRequestTypeID         Int                            @id @default(autoincrement())
+  ServiceTypeID                Int
+  ServiceDeptID                Int
+  ServiceRequestTypeName       String                         @db.VarChar(250)
+  Description                  String?                        @db.VarChar(250)
+  Sequence                     Decimal?                       @db.Decimal(10, 2)
+  UserID                       Int
+  Created                      DateTime                       @db.DateTime(0)
+  Modified                     DateTime                       @db.DateTime(0)
+  RequestTotal                 Int                            @default(0)
+  RequestPending               Int                            @default(0)
+  RequestClosed                Int                            @default(0)
+  RequestCancelled             Int                            @default(0)
+  DefaultPriorityLevel         String?                        @db.VarChar(50)
+  servicerequest               servicerequest[]
+  servicetype                  servicetype                    @relation(fields: [ServiceTypeID], references: [ServiceTypeID], onUpdate: Restrict, map: "servicerequesttype_ibfk_1")
+  servicedept                  servicedept                    @relation(fields: [ServiceDeptID], references: [ServiceDeptID], onUpdate: Restrict, map: "servicerequesttype_ibfk_2")
+  sec_user                     sec_user                       @relation(fields: [UserID], references: [UserID], onUpdate: Restrict, map: "servicerequesttype_ibfk_3")
+  servicerequesttypewiseperson servicerequesttypewiseperson[]
+
+  @@index([ServiceDeptID], map: "ServiceDeptID")
+  @@index([ServiceTypeID], map: "ServiceTypeID")
+  @@index([UserID], map: "UserID")
+}
+
+model servicerequesttypewiseperson {
+  ServiceRequestTypeWisePersonID Int                @id @default(autoincrement())
+  ServiceRequestTypeID           Int
+  StaffID                        Int
+  FromDate                       DateTime           @db.DateTime(0)
+  ToDate                         DateTime?          @db.DateTime(0)
+  Description                    String?            @db.VarChar(250)
+  UserID                         Int
+  Created                        DateTime           @db.DateTime(0)
+  Modified                       DateTime           @db.DateTime(0)
+  servicerequesttype             servicerequesttype @relation(fields: [ServiceRequestTypeID], references: [ServiceRequestTypeID], onUpdate: Restrict, map: "servicerequesttypewiseperson_ibfk_1")
+  staff                          staff              @relation(fields: [StaffID], references: [StaffID], onUpdate: Restrict, map: "servicerequesttypewiseperson_ibfk_2")
+  sec_user                       sec_user           @relation(fields: [UserID], references: [UserID], onUpdate: Restrict, map: "servicerequesttypewiseperson_ibfk_3")
+
+  @@index([ServiceRequestTypeID], map: "ServiceRequestTypeID")
+  @@index([StaffID], map: "StaffID")
+  @@index([UserID], map: "UserID")
+}
+
+model servicetype {
+  ServiceTypeID      Int                  @id @default(autoincrement())
+  ServiceTypeName    String               @db.VarChar(250)
+  Description        String?              @db.VarChar(250)
+  Sequence           Decimal?             @db.Decimal(10, 2)
+  UserID             Int
+  Created            DateTime             @db.DateTime(0)
+  Modified           DateTime             @db.DateTime(0)
+  IsForStaff         Boolean?
+  IsForStudent       Boolean?
+  servicerequesttype servicerequesttype[]
+  sec_user           sec_user             @relation(fields: [UserID], references: [UserID], onUpdate: Restrict, map: "servicetype_ibfk_1")
+
+  @@index([UserID], map: "UserID")
+}
+
+model staff {
+  StaffID                      Int                            @id @default(autoincrement())
+  StaffName                    String                         @db.VarChar(250)
+  Phone                        String?                        @db.VarChar(50)
+  Email                        String?                        @db.VarChar(250)
+  Description                  String?                        @db.VarChar(500)
+  CampusID                     Int
+  Created                      DateTime                       @default(now()) @db.DateTime(0)
+  Modified                     DateTime                       @default(now()) @db.DateTime(0)
+  servicedeptperson            servicedeptperson[]
+  servicerequest               servicerequest[]
+  servicerequestreply          servicerequestreply[]
+  servicerequesttypewiseperson servicerequesttypewiseperson[]
+  campus                       campus                         @relation(fields: [CampusID], references: [CampusID], onUpdate: Restrict, map: "FK_Staff_Campus")
+
+  @@index([CampusID], map: "FK_Staff_Campus")
+}
